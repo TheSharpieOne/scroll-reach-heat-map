@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html ng-app>
+  <head>
+    <title>Heat Map Overlay Settings</title>
+    <script type="text/javascript" src="jquery-2.0.0.min.js"></script>
+	<script type="text/javascript" src="angular.min.js"></script>
+    <script type="text/javascript" src="options.js"></script>
+  </head>
+  <body ng-controller="DomainCtrl" >
+	<div>
+	<p>Here you can set up what domains you have scroll reach tracking on.  You can have as many as you want.  Click "New" to add a new domain settings, click "X" next to a setting to remove it.  Once you are done, click the "Save" button to commit your changes.</p>
+	Fields:
+	<ul>
+		<li>Domain - The domain of the website, without the protocol e.g. www.domain.com</li>
+		<li>GA Profile ID - To obtain this: <a href="http://productforums.google.com/d/msg/analytics/dRuAr1K4waI/Nspi2uByjDkJ" target="_blank">http://productforums.google.com/d/msg/analytics/dRuAr1K4waI/Nspi2uByjDkJ</a> (Note: <b>not</b> the same as the UA number or Account ID)</li>
+		<li>Default Page - optional.  Google will track pages ending with '/', such as the home page, by the real file name. E.g. index.php, index.html, default.aspx and so on.  Enter the default page to correctly see the overlay on pages ending with '/'.</li>
+	</ul>
+	<input type="search" ng-model="search" class="search-query" placeholder="Search">
+	<table>
+	  <thead>
+	  <tr>
+		<th>Domain</th>
+		<th>GA Profile ID</th>
+		<th>Default Page</th>
+		<th><a href="#" ng-click="add($event)">New</a></th>
+	  </tr>
+	  </thead>
+	  <tbody>
+	  <tr ng-repeat="account in accounts | filter:search | orderBy:'domain'">
+		<td><input type="text" ng-model="account.domain" placeholder="www.domain.com" /></td>
+		<td><input type="text" ng-model="account.ga" placeholder="123456789" /></td>
+		<td><input type="text" ng-model="account.homePage" placeholder="/default.aspx" /></td>
+		<td>
+		  <a href="#" ng-click="remove(account, $event)">X</a>
+		</td>
+	  </tr>
+	  </tbody>
+	</table>
+	<button ng-click="save()">Save</button>
+	<br /><br />
+	<p>To add scroll reach tracking to your site you need to have Google Analytics already setup and on your site, have jquery, and add the following script:</p>
+	<code>
+		<pre style="overflow:auto;">(function () {
+	var threshold = 10; // This number should a divisor of 100 (1, 2, 4, 5, 10, 20, 25, 50, 100) so that it will go evenly into the page's height in percents
+	var curReach = 0; // used to track the current max reach of the user
+	var $window = $(window); // select the window once, not every time we use it.
+	var $document = $(document); // select the document once, not every time we use it.
+
+	// This will detemine the user's reach based on the page's current height and the user's current window size.
+	// It will then round down to the nearest threshold, which is set above.
+	var getReach = function () {
+		return Math.floor((($window.height() + $window.scrollTop()) / $document.height()) * (100 / threshold)) * threshold;
+	};
+
+	// Sends the data of the current reach to GA for tracking/storage.
+	// Also, updates curReach to the user's currecnt reach
+	var trackReach = function (reach) {
+		curReach = reach;
+		_gaq.push(['_trackEvent', document.title, 'scroll reach', curReach + '%', curReach, true]);
+	};
+
+	var newReach = function(){
+		while(getReach() > curReach)
+			trackReach(curReach + threshold);
+	};
+			
+	//When the page first loads, this will track each threshold the user reaches.
+	newReach();
+	
+	//When the user scrolls, this will track each threshold the user reaches.
+	$window.scroll(newReach);
+})();</pre>
+	</code>
+	<p>Here is the minified version, only 269 bytes!:</p>
+	<code>
+		<pre style="overflow:auto;">!function(){var n=0,i=10,e=$(window),t=$(document),o=function(){return Math.floor((e.height()+e.scrollTop())/t.height()*(100/i))*i},r=function(i){n=i,_gaq.push(["_trackEvent",document.title,"scroll reach",n+"%",n,!0])},a=function(){for(;o()>n;)r(n+i)};a(),e.scroll(a)}();</pre>
+	</code>
+	</div>
+  </body>
+</html>
